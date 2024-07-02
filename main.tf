@@ -3,6 +3,11 @@
 
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = {
+      product = "tfe-eks"
+    }
+  }
 }
 
 # Filter out local zones, which are not currently supported 
@@ -15,7 +20,7 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  cluster_name = "education-eks-${random_string.suffix.result}"
+  cluster_name = "tfe-eks-${random_string.suffix.result}"
 }
 
 resource "random_string" "suffix" {
@@ -27,7 +32,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.8.1"
 
-  name = "education-vpc"
+  name = "tfe-vpc"
 
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -110,4 +115,16 @@ module "irsa-ebs-csi" {
   provider_url                  = module.eks.oidc_provider
   role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+}
+
+module "tfe_prereqs" {
+  source = "./tfe-prereqs"
+
+  network_id                   = module.vpc.vpc_id
+  network_private_subnet_cidrs = module.vpc.private_subnets_cidr_blocks
+  network_subnets_private      = module.vpc.private_subnets
+  friendly_name_prefix         = "tfe"
+  kms_key_arn                  = module.eks.kms_key_arn
+  cluster_security_group_id    = module.eks.node_security_group_id ## is this right?
+  s3_iam_principal_arn         = module.eks.cluster_iam_role_arn   ## is this right?
 }
