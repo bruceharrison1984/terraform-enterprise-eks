@@ -1,5 +1,7 @@
 # Terraform Enterprise EKS Example
 
+## **This should not be considered a Production ready instance of TFE, this is purely for exploratory/troubleshooting use**
+
 This repo is an amalagation of:
 
 - <https://github.com/hashicorp/terraform-aws-terraform-enterprise/tree/main>
@@ -9,23 +11,11 @@ This is a fast-ish way to get Terraform Enterprise up and running in EKS for tro
 
 ## Outputs
 
-_Outputs will be used to configure the TFE FDO Helm charts._
+The outputs from this module will be rendered into `override.yaml`. You can directly use this file to run the TFE Helm charts against the created EKS cluster.
 
-After running `terraform apply` the outputs should resemble the following:
+## TFE Helm Charts
 
-```sh
-cluster_endpoint = "https://C564F705E81B02BC904D37BEEC40B63B.gr7.us-east-1.eks.amazonaws.com"
-cluster_name = "tfe-eks-NCajJ9Nj"
-cluster_security_group_id = "sg-06069950c27b54382"
-object_store_hostname = "tfe-tfe-data.s3.us-east-1.amazonaws.com"
-postgres_password = <sensitive>
-postgres_username = "hashicorp"
-postsgres_endpoint = "tfe-tfe20240702194900779000000001.cp0pum8d5fu1.us-east-1.rds.amazonaws.com:5432"
-redis_hostname = "tfe-tfe.h8g6tm.ng.0001.use1.cache.amazonaws.com"
-region = "us-east-1"
-```
-
-You can retrieve the Postgres password explicitly with `terraform output postgres_password`.
+See the offical [TFE Helm Charts repository](https://github.com/hashicorp/terraform-enterprise-helm) to get the charts to install TFE.
 
 ## Kubectl Configuration
 
@@ -39,23 +29,38 @@ aws eks --region $(terraform output \
         --name $(terraform output -raw cluster_name)
 ```
 
-## TFE Helm Charts
+## Quick Start
 
-See the offical [TFE Helm Charts repository](https://github.com/hashicorp/terraform-enterprise-helm) to get the charts to install TFE.
-
-## misc
-
-## Push TFE image pull secret to EKS
+After establishing `kubectl` functionality, setup EKS to run TFE
 
 ```sh
+## create namespace
 kubectl create namespace terraform-enterprise
+
+## create TFE image pull secret (presumes TFE license is located at ./terraform.hclic)
 kubectl create secret docker-registry terraform-enterprise --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=$(cat ./terraform.hclic)  -n terraform-enterprise
 ```
 
-## Watch raw TFE logs as container comes up
+Copy `override.yaml` into the offical TFE Helm chart repo and then run the following to deploy it:
+
+```sh
+helm install terraform-enterprise . --values ./override.yaml -n terraform-enterprise
+```
+
+## Issues
+
+- Upon deletion, EKS will not cleanup up ALBs that were created. These need to be manually removed before the VPC can be fully destroyed.
+
+## Helpful Commands
+
+### Watch raw TFE logs as container comes up
 
 ```sh
 while true; do sleep 1; kubectl exec -n terraform-enterprise -ti $(kubectl get pods -n terraform-enterprise | tail -1 | awk '{print $1}') -- tail -n 100 -f /var/log/terraform-enterprise/terraform-enterprise.log; done
 ```
 
-- Upon deletion, EKS may not cleanup up ALBs that were created. These need to be manually removed before the VPC can be fully destroyed.
+## Get a debian shell inside EKS to check connectivity, etc
+
+```sh
+kubectl run support -i --tty -n terraform-enterprise --image debian:bullseye --restart=Never -- bash
+```

@@ -14,6 +14,11 @@ output "postsgres_endpoint" {
   description = "The connection endpoint of the PostgreSQL RDS instance in address:port format."
 }
 
+output "postsgres_db_name" {
+  value       = module.database.name
+  description = "The connection endpoint of the PostgreSQL RDS instance in address:port format."
+}
+
 output "redis_hostname" {
   value       = module.redis.hostname
   description = "The IP address of the primary node in the Redis Elasticache replication group."

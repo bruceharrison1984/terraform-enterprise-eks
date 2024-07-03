@@ -159,9 +159,10 @@ module "tfe_prereqs" {
 
 resource "local_file" "helm_override" {
   content = templatefile("${path.module}/override.tpl.yaml", {
-    TFE_DATABASE_HOST            = module.tfe_prereqs.postsgres_endpoint
+    TFE_DATABASE_HOST            = split(":", module.tfe_prereqs.postsgres_endpoint)[0]
     TFE_DATABASE_USER            = module.tfe_prereqs.postgres_username
     TFE_DATABASE_PASSWORD        = module.tfe_prereqs.postgres_password
+    TFE_DATABASE_NAME            = module.tfe_prereqs.postsgres_db_name
     TFE_OBJECT_STORAGE_S3_BUCKET = module.tfe_prereqs.object_store_name
     TFE_OBJECT_STORAGE_S3_REGION = var.region
     TFE_SERVICE_ACCOUNT_ROLE_ARN = aws_iam_role.eks_service_principal.arn
