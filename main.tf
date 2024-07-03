@@ -156,3 +156,16 @@ module "tfe_prereqs" {
   cluster_security_group_id    = module.eks.node_security_group_id ## is this right?
   s3_iam_principal_arn         = aws_iam_role.eks_service_principal.arn
 }
+
+resource "local_file" "helm_override" {
+  content = templatefile(path, {
+    TFE_DATABASE_HOST            = module.tfe_prereqs.postsgres_endpoint
+    TFE_DATABASE_USER            = module.tfe_prereqs.postgres_username
+    TFE_DATABASE_PASSWORD        = module.tfe_prereqs.postgres_password
+    TFE_OBJECT_STORAGE_S3_BUCKET = module.tfe_prereqs.name
+    TFE_OBJECT_STORAGE_S3_REGION = var.region
+    TFE_SERVICE_ACCOUNT_ROLE_ARN = aws_iam_role.eks_service_principal.arn
+    TFE_REDIS_HOST               = module.tfe_prereqs.redis_hostname
+  })
+  filename = "${path.module}/override.yaml"
+}
