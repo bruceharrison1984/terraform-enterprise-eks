@@ -19,8 +19,8 @@ output "redis_hostname" {
   description = "The IP address of the primary node in the Redis Elasticache replication group."
 }
 
-output "object_store_hostname" {
-  value       = module.object_storage.s3_bucket.bucket_regional_domain_name
+output "object_store_name" {
+  value       = module.object_storage.s3_bucket.bucket
   description = "The S3 bucket which contains TFE runtime data."
 }
 

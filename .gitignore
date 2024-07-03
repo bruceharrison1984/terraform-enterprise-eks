@@ -1,6 +1,11 @@
+# TFE License file
+terraform.hclic
+
+# TFE Helm overrides
+override.yaml
+
 # Local .terraform directories
 **/.terraform/*
-terraform.hclic
 
 # .tfstate files
 *.tfstate
