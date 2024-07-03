@@ -23,3 +23,9 @@ output "object_store_hostname" {
   value       = module.object_storage.s3_bucket.bucket_regional_domain_name
   description = "The S3 bucket which contains TFE runtime data."
 }
+
+output "object_store_arn" {
+  value       = module.object_storage.s3_bucket.arn
+  description = "The ARN S3 bucket which contains TFE runtime data."
+}
+

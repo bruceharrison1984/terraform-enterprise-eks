@@ -117,14 +117,42 @@ module "irsa-ebs-csi" {
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
 }
 
+/** this allows EKS to assume this role to interact with AWS */
+data "aws_iam_policy_document" "trust_policy" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [module.eks.oidc_provider_arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:sub"
+      values   = ["system:serviceaccount:demo-s3:demo-sa"]
+    }
+  }
+}
+
+resource "aws_iam_role" "eks_service_principal" {
+  name               = "eks-service-principal"
+  assume_role_policy = data.aws_iam_policy_document.trust_policy.json
+}
+
 module "tfe_prereqs" {
   source = "./tfe-prereqs"
 
   network_id                   = module.vpc.vpc_id
   network_private_subnet_cidrs = module.vpc.private_subnets_cidr_blocks
   network_subnets_private      = module.vpc.private_subnets
-  friendly_name_prefix         = "tfe"
+  friendly_name_prefix         = "eks"
   kms_key_arn                  = module.eks.kms_key_arn
   cluster_security_group_id    = module.eks.node_security_group_id ## is this right?
-  s3_iam_principal_arn         = module.eks.cluster_iam_role_arn   ## is this right?
+  s3_iam_principal_arn         = aws_iam_role.eks_service_principal.arn
 }

@@ -48,3 +48,7 @@ output "object_store_hostname" {
   value       = module.tfe_prereqs.object_store_hostname
   description = "The S3 bucket which contains TFE runtime data."
 }
+
+output "eks_iam_role_arn" {
+  value = aws_iam_role.eks_service_principal.arn
+}

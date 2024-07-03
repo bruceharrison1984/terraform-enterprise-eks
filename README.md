@@ -26,3 +26,26 @@ region = "us-east-1"
 ```
 
 You can retrieve the Postgres password explicitly with `terraform output postgres_password`.
+
+## Kubectl Configuration
+
+[Taken from Hashicorp EKS Tutorial](https://developer.hashicorp.com/terraform/tutorials/kubernetes/eks#configure-kubectl)
+
+Run the following command to retrieve the access credentials for your cluster and configure kubectl.
+
+```
+$ aws eks --region $(terraform output -raw region) update-kubeconfig \
+    --name $(terraform output -raw cluster_name)
+```
+
+## TFE Helm Charts
+
+See the offical [TFE Helm Charts repository](https://github.com/hashicorp/terraform-enterprise-helm) to get the charts to install TFE.
+
+## misc
+
+kubectl create secret docker-registry terraform-enterprise --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=$(cat ./terraform.hclic)  -n terraform-enterprise
+
+while true; do sleep 1; kubectl exec -n terraform-enterprise -ti $(kubectl get pods -n terraform-enterprise | tail -1 | awk '{print $1}') -- tail -n 100 -f /var/log/terraform-enterprise/terraform-enterprise.log; done
+
+- Upon deletion, EKS may not cleanup up ALBs that were created. These need to be manually removed before the VPC can be fully destroyed.
